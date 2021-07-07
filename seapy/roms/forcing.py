@@ -37,6 +37,21 @@ gfs_map = {
     "swrad": forcing_data("dswrfsfc", 1, 0)
 }
 
+gfs_map_nomads = {
+    "pad": 1.0,
+    "frc_lat": "lat",
+    "frc_lon": "lon",
+    "frc_time": "time",
+    "Tair": forcing_data("tmp2m", 1, -273.15),
+    "Pair": forcing_data("prmslmsl", 0.01, 0),
+    "Qair": forcing_data("rh2m", 1, 0),
+    "rain": forcing_data("pratesfc", 1, 0),
+    "Uwind": forcing_data("ugrd10m", 1, 0),
+    "Vwind": forcing_data("vgrd10m", 1, 0),
+    "lwrad_down": forcing_data("dlwrfsfc", 1, 0),
+    "swrad": forcing_data("dswrfsfc", 1, 0)
+}
+
 ncep_map = {
     "pad": 2.0,
     "frc_lat": "lat",
