@@ -12,6 +12,7 @@ notes.org
 .dir-locals.el
 .ropeproject
 __pycache__
+.vscode
 /todo.org
 /todo.org_archive
 unit_tests/
