@@ -16,8 +16,9 @@ from collections import namedtuple
 from rich.progress import track
 
 # Define a named tuple to store raw data for the gridder
-forcing_data = namedtuple("forcing_data", "field ratio offset")
-fields = ("Tair", "Qair", "Pair", "rain", "Uwind", "Vwind", "lwrad_down", "swrad")
+forcing_data = namedtuple('forcing_data', 'field ratio offset')
+fields = ("Tair", "Qair", "Pair", "rain",
+          "Uwind", "Vwind", "lwrad_down", "swrad")
 
 gfs_url = "https://pae-paha.pacioos.hawaii.edu/thredds/dodsC/ncep_global/NCEP_Global_Atmospheric_Model_best.ncd"
 
@@ -33,7 +34,7 @@ gfs_map = {
     "Uwind": forcing_data("ugrd10m", 1, 0),
     "Vwind": forcing_data("vgrd10m", 1, 0),
     "lwrad_down": forcing_data("dlwrfsfc", 1, 0),
-    "swrad": forcing_data("dswrfsfc", 1, 0),
+    "swrad": forcing_data("dswrfsfc", 1, 0)
 }
 
 gfs_map_nomads = {
@@ -48,7 +49,7 @@ gfs_map_nomads = {
     "Uwind": forcing_data("ugrd10m", 1, 0),
     "Vwind": forcing_data("vgrd10m", 1, 0),
     "lwrad_down": forcing_data("dlwrfsfc", 1, 0),
-    "swrad": forcing_data("dswrfsfc", 1, 0),
+    "swrad": forcing_data("dswrfsfc", 1, 0)
 }
 
 ncep_map = {
@@ -63,22 +64,12 @@ ncep_map = {
     "Uwind": forcing_data("uwnd", 1, 0),
     "Vwind": forcing_data("vwnd", 1, 0),
     "lwrad_down": forcing_data("dlwrf", 1, 0),
-    "swrad": forcing_data("dswrf", 1, 0),
+    "swrad": forcing_data("dswrf", 1, 0)
 }
 
 
-def gen_bulk_forcing(
-    infile,
-    fields,
-    outfile,
-    grid,
-    start_time,
-    end_time,
-    epoch=seapy.default_epoch,
-    clobber=False,
-    cdl=None,
-    no_progress=True,
-):
+def gen_bulk_forcing(infile, fields, outfile, grid, start_time, end_time,
+                     epoch=seapy.default_epoch, clobber=False, cdl=None):
     """
     Given a source file (or URL), a dictionary that defines the
     source fields mapped to the ROMS fields, then it will generate
@@ -118,8 +109,6 @@ def gen_bulk_forcing(
     cdl: string, optional,
         Use the specified CDL file as the definition for the new
         netCDF file.
-    no_progress: bool, default=False
-        Disable progress bar
 
     Returns
     -------
@@ -186,27 +175,25 @@ def gen_bulk_forcing(
     forcing = seapy.netcdf(infile)
 
     # Gather the information about the forcing
-    if "frc_time_units" in fields:
-        frc_time = netCDF4.num2date(
-            forcing.variables[fields["frc_time"]][:], fields["frc_time_units"]
-        )
+    if 'frc_time_units' in fields:
+        frc_time = netCDF4.num2date(forcing.variables[fields['frc_time']][:],
+                                    fields['frc_time_units'])
     else:
-        frc_time = seapy.roms.num2date(forcing, fields["frc_time"])
+        frc_time = seapy.roms.num2date(forcing, fields['frc_time'])
 
     # Figure out the time records that are required
-    time_list = np.where(np.logical_and(frc_time >= start_time, frc_time <= end_time))[
-        0
-    ]
+    time_list = np.where(np.logical_and(frc_time >= start_time,
+                                        frc_time <= end_time))[0]
     if not np.any(time_list):
         raise Exception("Cannot find valid times")
 
     # Get the latitude and longitude ranges
-    minlat = np.floor(np.min(grid.lat_rho)) - fields["pad"]
-    maxlat = np.ceil(np.max(grid.lat_rho)) + fields["pad"]
-    minlon = np.floor(np.min(grid.lon_rho)) - fields["pad"]
-    maxlon = np.ceil(np.max(grid.lon_rho)) + fields["pad"]
-    frc_lon = forcing.variables[fields["frc_lon"]][:]
-    frc_lat = forcing.variables[fields["frc_lat"]][:]
+    minlat = np.floor(np.min(grid.lat_rho)) - fields['pad']
+    maxlat = np.ceil(np.max(grid.lat_rho)) + fields['pad']
+    minlon = np.floor(np.min(grid.lon_rho)) - fields['pad']
+    maxlon = np.ceil(np.max(grid.lon_rho)) + fields['pad']
+    frc_lon = forcing.variables[fields['frc_lon']][:]
+    frc_lat = forcing.variables[fields['frc_lat']][:]
     # Make the forcing lat/lon on 2D grid
     if frc_lon.ndim == 3:
         frc_lon = np.squeeze(frc_lon[0, :, :])
@@ -217,50 +204,40 @@ def gen_bulk_forcing(
     # Find the values in our region
     if not grid.east():
         frc_lon[frc_lon > 180] -= 360
-    region_list = np.where(
-        np.logical_and.reduce(
-            (frc_lon <= maxlon, frc_lon >= minlon, frc_lat <= maxlat, frc_lat >= minlat)
-        )
-    )
+    region_list = np.where(np.logical_and.reduce((
+        frc_lon <= maxlon,
+        frc_lon >= minlon,
+        frc_lat <= maxlat,
+        frc_lat >= minlat)))
     if not np.any(region_list):
         raise Exception("Cannot find valid region")
 
-    eta_list = np.s_[np.min(region_list[0]) : np.max(region_list[0]) + 1]
-    xi_list = np.s_[np.min(region_list[1]) : np.max(region_list[1]) + 1]
+    eta_list = np.s_[np.min(region_list[0]):np.max(region_list[0]) + 1]
+    xi_list = np.s_[np.min(region_list[1]):np.max(region_list[1]) + 1]
     frc_lon = frc_lon[eta_list, xi_list]
     frc_lat = frc_lat[eta_list, xi_list]
 
     # Create the output file
-    out = seapy.roms.ncgen.create_frc_bulk(
-        outfile,
-        lat=frc_lat.shape[0],
-        lon=frc_lon.shape[1],
-        reftime=epoch,
-        clobber=clobber,
-        cdl=cdl,
-    )
-    out.variables["frc_time"][:] = seapy.roms.date2num(
-        frc_time[time_list], out, "frc_time"
-    )
-    out.variables["lat"][:] = frc_lat
-    out.variables["lon"][:] = frc_lon
+    out = seapy.roms.ncgen.create_frc_bulk(outfile, lat=frc_lat.shape[0],
+                                           lon=frc_lon.shape[1], reftime=epoch,
+                                           clobber=clobber, cdl=cdl)
+    out.variables['frc_time'][:] = seapy.roms.date2num(
+        frc_time[time_list], out, 'frc_time')
+    out.variables['lat'][:] = frc_lat
+    out.variables['lon'][:] = frc_lon
 
     # Loop over the fields and fill out the output file
-    for f in track(
-        list(set(fields.keys()) & (out.variables.keys())), disable=no_progress
-    ):
-        if hasattr(fields[f], "field") and fields[f].field in forcing.variables:
-            out.variables[f][:] = (
-                forcing.variables[fields[f].field][time_list, eta_list, xi_list]
-                * fields[f].ratio
-                + fields[f].offset
-            )
+    for f in track(list(set(fields.keys()) & (out.variables.keys()))):
+        if hasattr(fields[f], 'field') and fields[f].field in forcing.variables:
+            out.variables[f][:] = \
+                forcing.variables[fields[f].field][time_list, eta_list, xi_list] * \
+                fields[f].ratio + fields[f].offset
             out.sync()
 
     out.close()
 
 
-def gen_direct_forcing(his_file, frc_file, cdl=None, no_progress=False):
+def gen_direct_forcing(his_file, frc_file, cdl=None):
     """
     Generate a direct forcing file from a history (or other ROMS output) file. It requires
     that sustr, svstr, shflux, and ssflux (or swflux) with salt be available. This will
@@ -276,8 +253,6 @@ def gen_direct_forcing(his_file, frc_file, cdl=None, no_progress=False):
     cdl: string, optional,
         Use the specified CDL file as the definition for the new
         netCDF file.
-    no_progress: bool, default=False
-        Disable progress bar
 
     Returns
     -------
@@ -289,44 +264,39 @@ def gen_direct_forcing(his_file, frc_file, cdl=None, no_progress=False):
     ref, _ = seapy.roms.get_reftime(infile)
 
     # Create the output file
-    nc = seapy.roms.ncgen.create_frc_direct(
-        frc_file,
-        eta_rho=infile.dimensions["eta_rho"].size,
-        xi_rho=infile.dimensions["xi_rho"].size,
-        reftime=ref,
-        clobber=True,
-        title="Forcing from " + os.path.basename(his_file),
-        cdl=cdl,
-    )
+    nc = seapy.roms.ncgen.create_frc_direct(frc_file,
+                                            eta_rho=infile.dimensions[
+                                                'eta_rho'].size,
+                                            xi_rho=infile.dimensions[
+                                                'xi_rho'].size,
+                                            reftime=ref,
+                                            clobber=True,
+                                            title="Forcing from " +
+                                            os.path.basename(his_file),
+                                            cdl=cdl)
 
     # Copy the data over
-    time = seapy.roms.num2date(infile, "ocean_time")
-    nc.variables["frc_time"][:] = seapy.roms.date2num(time, nc, "frc_time")
-    for x in track(seapy.chunker(range(len(time)), 1000), disable=no_progress):
-        nc.variables["SSS"][x, :, :] = seapy.convolve_mask(
-            infile.variables["salt"][x, -1, :, :], copy=False
-        )
-        if "EminusP" in infile.variables:
-            nc.variables["swflux"][x, :, :] = (
-                seapy.convolve_mask(infile.variables["EminusP"][x, :, :], copy=False)
-                * 86400
-            )
-        elif "swflux" in infile.variables:
-            nc.variables["swflux"][x, :, :] = seapy.convolve_mask(
-                infile.variables["swflux"][x, :, :], copy=False
-            )
+    time = seapy.roms.num2date(infile, 'ocean_time')
+    nc.variables['frc_time'][:] = seapy.roms.date2num(time, nc, 'frc_time')
+    for x in track(seapy.chunker(range(len(time)), 1000)):
+        nc.variables['SSS'][x, :, :] = seapy.convolve_mask(
+            infile.variables['salt'][x, -1, :, :], copy=False)
+        if 'EminusP' in infile.variables:
+            nc.variables['swflux'][x, :, :] = seapy.convolve_mask(
+                infile.variables['EminusP'][x, :, :], copy=False) * 86400
+        elif 'swflux' in infile.variables:
+            nc.variables['swflux'][x, :, :] = seapy.convolve_mask(
+                infile.variables['swflux'][x, :, :], copy=False)
         else:
-            nc.variables["swflux"][x, :, :] = seapy.convolve_mask(
-                infile.variables["ssflux"][x, :, :] / nc.variables["SSS"][x, :, :],
-                copy=False,
-            )
+            nc.variables['swflux'][x, :, :] = seapy.convolve_mask(
+                infile.variables['ssflux'][x, :, :]
+                / nc.variables['SSS'][x, :, :], copy=False)
 
         nc.sync()
         for f in ("sustr", "svstr", "shflux", "swrad"):
             if f in infile.variables:
                 nc.variables[f][x, :, :] = seapy.convolve_mask(
-                    infile.variables[f][x, :, :], copy=False
-                )
+                    infile.variables[f][x, :, :], copy=False)
                 nc.sync()
 
     for f in ("lat_rho", "lat_u", "lat_v", "lon_rho", "lon_u", "lon_v"):
