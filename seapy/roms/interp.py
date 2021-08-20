@@ -817,6 +817,7 @@ def to_zgrid(
     cdl=None,
     dims=2,
     pmap=None,
+    no_progress=False,
 ):
     """
     Given an existing ROMS history or average file, create (if does not exit)
@@ -864,6 +865,8 @@ def to_zgrid(
         number of dimensions to use for lat/lon arrays (default 2)
     pmap : numpy.ndarray, optional:
         use the specified pmap rather than compute it
+    no_progress: bool, default=False
+        Supress non-ascii progress bars
 
     Returns
     -------
@@ -962,6 +965,7 @@ def to_zgrid(
             weight=weight,
             z_mask=True,
             pmap=pmap,
+            no_progress=no_progress,
         )
     except TimeoutError:
         print("Timeout: process is hung, deleting output.")
