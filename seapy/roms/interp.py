@@ -436,7 +436,7 @@ def __interp_grids(
                         Parallel(
                             n_jobs=threads,
                             max_nbytes=_max_memory,
-                            backend="multiprocessing",
+                            prefer="processes",
                         )(
                             delayed(__interp2_thread)(
                                 src_grid.lon_rho,
@@ -478,7 +478,7 @@ def __interp_grids(
                         Parallel(
                             n_jobs=threads,
                             max_nbytes=_max_memory,
-                            backend="multiprocessing",
+                            prefer="processes",
                         )(
                             delayed(__interp3_thread)(
                                 src_grid.lon_rho,
@@ -538,9 +538,7 @@ def __interp_grids(
         progress.update(_task_id, description="velocity")
         inc_count = child_grid.n / maxrecs
         for nr, recs in enumerate(seapy.chunker(records, maxrecs)):
-            vel = Parallel(
-                n_jobs=threads, max_nbytes=_max_memory, backend="multiprocessing"
-            )(
+            vel = Parallel(n_jobs=threads, max_nbytes=_max_memory, prefer="processes")(
                 delayed(__interp3_vel_thread)(
                     src_grid.lon_rho,
                     src_grid.lat_rho,
@@ -676,7 +674,7 @@ def field2d(
         disable=no_progress,
     ):
         nfield = np.ma.array(
-            Parallel(n_jobs=threads, backend="multiprocessing")(
+            Parallel(n_jobs=threads, prefer="processes")(
                 delayed(__interp2_thread)(
                     src_lon,
                     src_lat,
@@ -786,7 +784,7 @@ def field3d(
         disable=no_progress,
     ):
         nfield = np.ma.array(
-            Parallel(n_jobs=threads, backend="multiprocessing")(
+            Parallel(n_jobs=threads, prefer="processes")(
                 delayed(__interp3_thread)(
                     src_lon,
                     src_lat,
