@@ -433,7 +433,11 @@ def __interp_grids(
                         rn * maxrecs : np.minimum((rn + 1) * maxrecs, len(records))
                     ]
                     ndata = np.ma.array(
-                        Parallel(n_jobs=threads, max_nbytes=_max_memory)(
+                        Parallel(
+                            n_jobs=threads,
+                            max_nbytes=_max_memory,
+                            backend="multiprocessing",
+                        )(
                             delayed(__interp2_thread)(
                                 src_grid.lon_rho,
                                 src_grid.lat_rho,
@@ -471,7 +475,11 @@ def __interp_grids(
                         rn * maxrecs : np.minimum((rn + 1) * maxrecs, len(records))
                     ]
                     ndata = np.ma.array(
-                        Parallel(n_jobs=threads, max_nbytes=_max_memory)(
+                        Parallel(
+                            n_jobs=threads,
+                            max_nbytes=_max_memory,
+                            backend="multiprocessing",
+                        )(
                             delayed(__interp3_thread)(
                                 src_grid.lon_rho,
                                 src_grid.lat_rho,
@@ -530,7 +538,9 @@ def __interp_grids(
         progress.update(_task_id, description="velocity")
         inc_count = child_grid.n / maxrecs
         for nr, recs in enumerate(seapy.chunker(records, maxrecs)):
-            vel = Parallel(n_jobs=threads, max_nbytes=_max_memory)(
+            vel = Parallel(
+                n_jobs=threads, max_nbytes=_max_memory, backend="multiprocessing"
+            )(
                 delayed(__interp3_vel_thread)(
                     src_grid.lon_rho,
                     src_grid.lat_rho,
@@ -666,7 +676,7 @@ def field2d(
         disable=no_progress,
     ):
         nfield = np.ma.array(
-            Parallel(n_jobs=threads)(
+            Parallel(n_jobs=threads, backend="multiprocessing")(
                 delayed(__interp2_thread)(
                     src_lon,
                     src_lat,
@@ -776,7 +786,7 @@ def field3d(
         disable=no_progress,
     ):
         nfield = np.ma.array(
-            Parallel(n_jobs=threads)(
+            Parallel(n_jobs=threads, backend="multiprocessing")(
                 delayed(__interp3_thread)(
                     src_lon,
                     src_lat,
