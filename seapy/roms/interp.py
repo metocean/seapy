@@ -15,6 +15,7 @@ import os
 import seapy
 from seapy.timeout import timeout, TimeoutError
 from joblib import Parallel, delayed
+import threading
 from warnings import warn
 from rich.progress import track, BarColumn, TextColumn, TimeElapsedColumn, Progress
 
@@ -43,6 +44,9 @@ def __interp2_thread(rx, ry, data, zx, zy, pmap, weight, nx, ny, mask):
     """
     internal routine: 2D interpolation thread for parallel interpolation
     """
+    # monkey patch to make it work in celery (scheduler)
+    threading.current_thread().setName("MainThread")
+
     data = np.ma.fix_invalid(data, copy=False)
 
     # Convolve the water over the land
@@ -92,6 +96,9 @@ def __interp3_thread(
     """
     internal routine: 3D interpolation thread for parallel interpolation
     """
+    # monkey patch to make it work in celery (scheduler)
+    threading.current_thread().setName("MainThread")
+
     # Make the mask 3D
     mask = seapy.adddim(mask, zz.shape[0])
     data = np.ma.fix_invalid(data, copy=False)
@@ -194,6 +201,9 @@ def __interp3_vel_thread(
     """
     internal routine: 3D velocity interpolation thread for parallel interpolation
     """
+    # monkey patch to make it work in celery (scheduler)
+    threading.current_thread().setName("MainThread")
+
     # Put on the same grid
     if u.shape != v.shape:
         u = seapy.model.u2rho(u, fill=True)
