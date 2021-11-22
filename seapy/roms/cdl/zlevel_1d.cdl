@@ -18,7 +18,7 @@ variables:
     short mask(lat, lon) ;
         mask:long_name = "field mask" ;
         mask:value = "0-land, 1-water" ;
-	double time(time) ;
+	float time(time) ;
 		time:long_name = "time since initialization" ;
 		time:units = "seconds since 1940-01-01 00:00:00" ;
 	float zeta(time, lat, lon) ;
