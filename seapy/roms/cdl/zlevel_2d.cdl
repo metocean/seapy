@@ -20,7 +20,7 @@ variables:
         mask:value = "0-land, 1-water" ;
     float time(time) ;
         time:long_name = "time since initialization" ;
-        time:units = "seconds since 1940-01-01 00:00:00" ;
+        time:units = "hours since 1940-01-01 00:00:00" ;
     float zeta(time, lat, lon) ;
         zeta:long_name = "free-surface" ;
         zeta:units = "meter" ;
