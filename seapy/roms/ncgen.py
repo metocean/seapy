@@ -209,8 +209,12 @@ def add_variable(nc, var):
         dims = var['dims'].replace(" ", "").split(',')
     except:
         dims = var['dims']
+
+    fill_value = 1e37 if var["type"] in ['f4', 'f8'] else None
+
     try:
-        nvar = nc.createVariable(var["name"], var["type"], dims)
+        nvar = nc.createVariable(
+            var["name"], var["type"], dims, fill_value=fill_value)
     except:
         nvar = nc.createVariable(var["name"], var["type"])
 
