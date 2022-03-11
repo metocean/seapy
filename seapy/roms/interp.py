@@ -69,8 +69,7 @@ def __interp2_thread(rx, ry, data, zx, zy, pmap, weight, nx, ny, mask):
     data = seapy.convolve_mask(data, ksize=ksize, copy=False)
 
     # Interpolate the field and return the result
-    with timeout(minutes=30):
-        res, pm = seapy.oasurf(rx, ry, data, zx, zy, pmap, weight, nx, ny)
+    res, pm = seapy.oasurf(rx, ry, data, zx, zy, pmap, weight, nx, ny)
 
     return np.ma.masked_where(
         np.logical_or(mask == 0, np.abs(res) > 9e4), res, copy=False
@@ -172,23 +171,23 @@ def __interp3_thread(
     ndat[top, :, :] = data[top, :, :].filled(np.nan) * up_factor
 
     # Interpolate the field and return the result
-    with timeout(minutes=30):
-        if gradsrc:
-            res, pm = seapy.oavol(
-                rx,
-                ry,
-                nrz[::-1, :, :],
-                ndat[::-1, :, :],
-                zx,
-                zy,
-                zz,
-                pmap,
-                weight,
-                nx,
-                ny,
-            )
-        else:
-            res, pm = seapy.oavol(rx, ry, nrz, ndat, zx, zy, zz, pmap, weight, nx, ny)
+    if gradsrc:
+        res, pm = seapy.oavol(
+            rx,
+            ry,
+            nrz[::-1, :, :],
+            ndat[::-1, :, :],
+            zx,
+            zy,
+            zz,
+            pmap,
+            weight,
+            nx,
+            ny,
+        )
+    else:
+        res, pm = seapy.oavol(rx, ry, nrz, ndat, zx, zy,
+                              zz, pmap, weight, nx, ny)
 
     return np.ma.masked_where(
         np.logical_or(mask == 0, np.abs(res) > 9e4), res, copy=False
@@ -446,7 +445,7 @@ def __interp_grids(
                         Parallel(
                             n_jobs=threads,
                             max_nbytes=_max_memory,
-                            prefer="processes",
+                            prefer="threads",
                         )(
                             delayed(__interp2_thread)(
                                 src_grid.lon_rho,
@@ -488,7 +487,7 @@ def __interp_grids(
                         Parallel(
                             n_jobs=threads,
                             max_nbytes=_max_memory,
-                            prefer="processes",
+                            prefer="threads",
                         )(
                             delayed(__interp3_thread)(
                                 src_grid.lon_rho,
@@ -548,7 +547,7 @@ def __interp_grids(
         progress.update(_task_id, description="velocity")
         inc_count = child_grid.n / maxrecs
         for nr, recs in enumerate(seapy.chunker(records, maxrecs)):
-            vel = Parallel(n_jobs=threads, max_nbytes=_max_memory, prefer="processes")(
+            vel = Parallel(n_jobs=threads, max_nbytes=_max_memory, prefer="threads")(
                 delayed(__interp3_vel_thread)(
                     src_grid.lon_rho,
                     src_grid.lat_rho,
@@ -684,7 +683,7 @@ def field2d(
         disable=no_progress,
     ):
         nfield = np.ma.array(
-            Parallel(n_jobs=threads, prefer="processes")(
+            Parallel(n_jobs=threads, prefer="threads")(
                 delayed(__interp2_thread)(
                     src_lon,
                     src_lat,
@@ -794,7 +793,7 @@ def field3d(
         disable=no_progress,
     ):
         nfield = np.ma.array(
-            Parallel(n_jobs=threads, prefer="processes")(
+            Parallel(n_jobs=threads, prefer="threads")(
                 delayed(__interp3_thread)(
                     src_lon,
                     src_lat,
