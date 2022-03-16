@@ -24,7 +24,7 @@ _down_scaling = {"zeta": 1.0, "u": 0.999, "v": 0.999, "temp": 0.999, "salt": 1.0
 _ksize_range = (7, 15)
 # Limit amount of memory in bytes to process in a single read. This determines how to
 # divide up the time-records in interpolation
-_max_memory = 768 * 1024 * 1024  # 768 MBytes
+_max_memory = 5 * 768 * 1024 * 1024  # 768 MBytes
 
 
 def __mask_z_grid(z_data, src_depth, z_depth):
