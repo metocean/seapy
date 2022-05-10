@@ -91,6 +91,7 @@ obs_provenance = {
     431: "SSH_AVISO_CRYOSAT2",
     432: "SSH_AVISO_HAIYANG",
     433: "SSH_AVISO_SENTINEL3A",
+    434: "SSH_AVISO_SENTINEL3B",    
     450: "SSH_HYCOM",
     460: "SSS_AQUARIUS",
     500: "DRIFTERS",
@@ -104,7 +105,8 @@ obs_provenance = {
     670: "RADAR_PPK",
     700: "ADCP",
     800: "MOORING",
-    810: "TAO_ARRAY"
+    810: "TAO_ARRAY",
+    900: "MANGOPARE"
 }
 
 
