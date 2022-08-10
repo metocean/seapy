@@ -529,6 +529,7 @@ class aviso_sla_track(obsgen):
         # Load AVISO Data
         nc = seapy.netcdf(file)
         lon = nc.variables["longitude"][:]
+        lon[lon<0] = lon[lon<0]+360 # if negative lon, convert to 0-360 - avoids problems with date line
         lat = nc.variables["latitude"][:]
         slaname = 'SLA' if 'SLA' in nc.variables.keys() else 'sla_filtered'
         dat = nc.variables[slaname][:]
@@ -1552,13 +1553,14 @@ class mangopare(obsgen):
     class to process TEMPERATURE profiles from Mangopare sensors (Moana Project) into ROMS observation
     files. This is a subclass of seapy.roms.genobs.genobs, and handles
     the loading of the data.
+    Temperature error set to sensor accuracy (0.1C) - resolution is 0.01C, and resposne rate 1Hz.
     """
 
     def __init__(self, grid, dt, reftime=seapy.default_epoch, temp_limits=None,
-                 salt_limits=None, temp_error=0.25,
+                 salt_limits=None, temp_error=0.1,
                  salt_error=0.1):
         if temp_limits is None:
-            self.temp_limits = (2, 35)
+            self.temp_limits = (2, 35) # May need to change values if working on "extreme" regions
         else:
             self.temp_limits = temp_limits
 
@@ -1631,7 +1633,8 @@ class mangopare(obsgen):
         #time[temp.mask] = np.ma.masked
 
         # Search for good data by QC codes
-        good_data = np.where(temp_qc.compressed() <= 4)
+        good_data = np.where(temp_qc.compressed() <= 2) # 0"No QC Applied", 1"Good", 2"Probably Good", 3"Probably Bad", 4"Bad", 5"Overwritten"
+        # Recomend to also apply ROMS internal QC
 
         # Put everything together into individual observations
         #time = time.compressed().T[good_data]
