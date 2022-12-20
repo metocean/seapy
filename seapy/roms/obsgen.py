@@ -1658,3 +1658,104 @@ class mangopare(obsgen):
                                       data, self.dt, title)
         obs.reftime = self.reftime
         return obs
+class cop_nrt(obsgen):
+    """
+    class to process TEMPERATURE profiles from Copernicus near-real-time (NRT) dataset into ROMS observation
+    files. This is a subclass of seapy.roms.genobs.genobs, and handles
+    the loading of the data.
+    """
+
+    def __init__(self, grid, dt, reftime=seapy.default_epoch, temp_limits=None,
+                 salt_limits=None, temp_error=0.25,
+                 salt_error=0.1):
+        if temp_limits is None:
+            self.temp_limits = (2, 35)
+        else:
+            self.temp_limits = temp_limits
+
+        self.temp_error = temp_error
+        super().__init__(grid, dt, reftime)
+
+    def datespan_file(self, file):
+        """
+        return the just the day that this argo file covers
+        """
+        nc = seapy.netcdf(file)
+        try:
+            d = netCDF4.num2date(nc.variables['TIME'][0],
+                                 nc.variables['TIME'].units)
+            st = datetime.datetime(*d.timetuple()[:3])
+            en = datetime.datetime(*d.timetuple()[:3] + (23, 59, 59))
+        except:
+            st = en = None
+            pass
+        finally:
+            nc.close()
+            return st, en
+
+    def convert_file(self, file, title="CORA NRT Obs"):
+        """
+        Load a CORA file and convert into an obs structure
+        """
+        nc = seapy.netcdf(file, aggdim="N_PROF")
+
+        # Load the position of all profiles in the file
+        lon = nc.variables["LONGITUDE"][:]
+        lat = nc.variables["LATITUDE"][:]
+
+        # Find the profiles that are in our area with known locations quality
+        if self.grid.east():
+            lon[lon < 0] += 360
+        profile_list = np.where(np.logical_and.reduce((
+            lat >= np.min(self.grid.lat_rho),
+            lat <= np.max(self.grid.lat_rho),
+            lon >= np.min(self.grid.lon_rho),
+            lon <= np.max(self.grid.lon_rho),
+            )))[0]
+
+        # Check which are good profiles
+        if not profile_list.size:
+            return None
+
+        # Load only the data from those in our area
+        julian_day = nc.variables["TIME"][profile_list]
+        cora_epoch = datetime.datetime.strptime(''.join(
+            nc.variables["TIME"].units[:]), 'days since %Y-%m-%dT%H:%M:%SZ')
+        time_delta = (self.epoch - cora_epoch).days
+
+        lon = lon[profile_list]
+        lat = lat[profile_list]
+
+        # Load the data in our region and time
+        temp = nc.variables["TEMP"][profile_list, :]
+        temp_qc = nc.variables["TEMP_QC"][profile_list, :]
+        depth = nc.variables["DEPH"][:]
+        #depth = np.tile(depth.transpose() , (np.shape(temp)[0], 1))
+        nc.close()
+
+        # Ensure consistency
+        temp[temp.mask] = np.ma.masked
+        temp_qc[temp.mask] = np.ma.masked
+        depth[temp.mask] = np.ma.masked
+
+        # Search for good data by QC codes
+        good_data = np.where(temp_qc.compressed() <= 4)
+        
+        # Put everything together into individual observations
+        time = np.resize(julian_day - time_delta,
+                         temp.shape[::-1]).T[~temp.mask][good_data]
+        lat = np.resize(lat, temp.shape[::-1]).T[~temp.mask][good_data]
+        lon = np.resize(lon, temp.shape[::-1]).T[~temp.mask][good_data]
+        depth = depth.compressed().T[good_data]
+
+        # Apply the limits
+        temp = np.ma.masked_outside(temp.compressed()[good_data],
+                                    self.temp_limits[0], self.temp_limits[1])
+
+        data = [seapy.roms.obs.raw_data("TEMP", "CORA_T", temp,
+                                        None, self.temp_error)]
+
+        obs = seapy.roms.obs.gridder(self.grid, time, lon, lat, depth,
+                                      data, self.dt, title)
+        obs.reftime = self.reftime
+        return obs
