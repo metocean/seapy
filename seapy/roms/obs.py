@@ -31,7 +31,7 @@ from warnings import warn
 from rich.progress import track
 
 # Define a named tuple to store raw data for the gridder
-raw_data = namedtuple('raw_data', 'type provenance values error min_error')
+raw_data = namedtuple("raw_data", "type provenance values error min_error")
 
 # Define the observation type
 obs_types = {
@@ -42,7 +42,7 @@ obs_types = {
     5: "V",
     6: "TEMP",
     7: "SALT",
-    20: "RADIAL"
+    20: "RADIAL",
 }
 # Define the observation provenances used within my applications
 obs_provenance = {
@@ -91,7 +91,8 @@ obs_provenance = {
     431: "SSH_AVISO_CRYOSAT2",
     432: "SSH_AVISO_HAIYANG",
     433: "SSH_AVISO_SENTINEL3A",
-    434: "SSH_AVISO_SENTINEL3B",    
+    434: "SSH_AVISO_SENTINEL3B",
+    435: "SSH_AVISO_SENTINEL6A",
     450: "SSH_HYCOM",
     460: "SSS_AQUARIUS",
     500: "DRIFTERS",
@@ -106,7 +107,7 @@ obs_provenance = {
     700: "ADCP",
     800: "MOORING",
     810: "TAO_ARRAY",
-    900: "MANGOPARE"
+    900: "MANGOPARE",
 }
 
 
@@ -117,8 +118,7 @@ def _type_from_string(s):
     return the value as such
     """
     try:
-        return list(obs_types.keys())[
-            list(obs_types.values()).index(s.upper())]
+        return list(obs_types.keys())[list(obs_types.values()).index(s.upper())]
     except AttributeError:
         return int(s)
 
@@ -131,7 +131,8 @@ def _provenance_from_string(s):
     """
     try:
         return list(obs_provenance.keys())[
-            list(obs_provenance.values()).index(s.upper())]
+            list(obs_provenance.values()).index(s.upper())
+        ]
     except AttributeError:
         return int(s)
 
@@ -201,11 +202,23 @@ def asprovenance(prov):
 
 
 class obs:
-
-    def __init__(self, filename=None, time=None, x=None, y=None, z=None,
-                 lat=None, lon=None, depth=None, value=None, error=None,
-                 type=None, provenance=None, meta=None,
-                 title="ROMS Observations"):
+    def __init__(
+        self,
+        filename=None,
+        time=None,
+        x=None,
+        y=None,
+        z=None,
+        lat=None,
+        lon=None,
+        depth=None,
+        value=None,
+        error=None,
+        type=None,
+        provenance=None,
+        meta=None,
+        title="ROMS Observations",
+    ):
         """
         Class to deal with ROMS observations for data assimilation
 
@@ -257,10 +270,14 @@ class obs:
             self.provenance = nc.variables["obs_provenance"][:]
             # Update the provenance definitions
             try:
-                obs_provenance.update(dict((int(k.strip()), v.strip())
-                                           for v, k in
-                                           (it.split(':') for it in
-                                            nc.obs_provenance.split(','))))
+                obs_provenance.update(
+                    dict(
+                        (int(k.strip()), v.strip())
+                        for v, k in (
+                            it.split(":") for it in nc.obs_provenance.split(",")
+                        )
+                    )
+                )
             except (AttributeError, ValueError):
                 pass
             try:
@@ -313,11 +330,16 @@ class obs:
         self.type = astype(self.type.ravel())
 
         lt = self.time.size
-        if not lt == self.x.size == self.y.size == \
-                self.value.size == self.error.size == self.type.size:
+        if (
+            not lt
+            == self.x.size
+            == self.y.size
+            == self.value.size
+            == self.error.size
+            == self.type.size
+        ):
             # If these lengths are not equal, then there is a serious issue
-            raise ValueError(
-                "Lengths of observation attributes are not equal.")
+            raise ValueError("Lengths of observation attributes are not equal.")
         else:
             # For the others, we can pad the information to ensure
             # consistency
@@ -327,20 +349,23 @@ class obs:
                     return arr
                 return np.resize(arr, n)
 
-            self.z = _resizearr('z', lt)
-            self.lat = _resizearr('lat', lt)
-            self.lon = _resizearr('lon', lt)
-            self.depth = _resizearr('depth', lt)
-            self.provenance = asprovenance(_resizearr('provenance', lt))
-            self.meta = _resizearr('meta', lt)
+            self.z = _resizearr("z", lt)
+            self.lat = _resizearr("lat", lt)
+            self.lon = _resizearr("lon", lt)
+            self.depth = _resizearr("depth", lt)
+            self.provenance = asprovenance(_resizearr("provenance", lt))
+            self.meta = _resizearr("meta", lt)
 
         # Eliminate bad values
-        good_vals = np.logical_and.reduce((
-            np.isfinite(self.value),
-            np.isfinite(self.x),
-            np.isfinite(self.y),
-            np.isfinite(self.error),
-            np.isfinite(self.time)))
+        good_vals = np.logical_and.reduce(
+            (
+                np.isfinite(self.value),
+                np.isfinite(self.x),
+                np.isfinite(self.y),
+                np.isfinite(self.error),
+                np.isfinite(self.time),
+            )
+        )
         if np.any(~good_vals):
             self.delete(np.where(good_vals == False))
 
@@ -355,11 +380,20 @@ class obs:
         return self.value.size
 
     def __getitem__(self, l):
-        return obs(time=self.time[l], x=self.x[l], y=self.y[l],
-                   z=self.z[l], lon=self.lon[l], lat=self.lat[l],
-                   depth=self.depth[l], value=self.value[l],
-                   error=self.error[l], type=self.type[l],
-                   provenance=self.provenance[l], meta=self.meta[l])
+        return obs(
+            time=self.time[l],
+            x=self.x[l],
+            y=self.y[l],
+            z=self.z[l],
+            lon=self.lon[l],
+            lat=self.lat[l],
+            depth=self.depth[l],
+            value=self.value[l],
+            error=self.error[l],
+            type=self.type[l],
+            provenance=self.provenance[l],
+            meta=self.meta[l],
+        )
 
     def __setitem__(self, l, new_obs):
         if not isinstance(new_obs, seapy.roms.obs.obs):
@@ -380,17 +414,29 @@ class obs:
         self._consistent()
 
     def __repr__(self):
-        return "< {:d} obs: {:.1f} to {:.1f} >".format(self.value.size,
-                                                       np.min(self.time), np.max(self.time))
+        return "< {:d} obs: {:.1f} to {:.1f} >".format(
+            self.value.size, np.min(self.time), np.max(self.time)
+        )
 
     def __str__(self):
-        return "\n".join([repr(self), "\n".join(
-            "{:.3f}, [{:s}:{:s}] ({:.2f},{:.2f},{:.2f}) = {:.4f} +/- {:.4f}".format(
-                t, obs_types[self.type[n]],
-                obs_provenance.get(self.provenance[n], "UNKNOWN"),
-                self.lon[n], self.lat[n], self.depth[n],
-                self.value[n], self.error[n])
-            for n, t in enumerate(self.time))])
+        return "\n".join(
+            [
+                repr(self),
+                "\n".join(
+                    "{:.3f}, [{:s}:{:s}] ({:.2f},{:.2f},{:.2f}) = {:.4f} +/- {:.4f}".format(
+                        t,
+                        obs_types[self.type[n]],
+                        obs_provenance.get(self.provenance[n], "UNKNOWN"),
+                        self.lon[n],
+                        self.lat[n],
+                        self.depth[n],
+                        self.value[n],
+                        self.error[n],
+                    )
+                    for n, t in enumerate(self.time)
+                ),
+            ]
+        )
 
     def add(self, new_obs):
         """
@@ -440,6 +486,7 @@ class obs:
             deep copy of the class
         """
         import copy
+
         return copy.deepcopy(self)
 
     def delete(self, obj):
@@ -478,7 +525,7 @@ class obs:
         Build the survey structure from the observations
         """
         # Generate the sort list
-        self.sort = np.argsort(self.time, kind='mergesort')
+        self.sort = np.argsort(self.time, kind="mergesort")
 
         # Build the survey structure
         times, counts = np.unique(self.time[self.sort], return_counts=True)
@@ -526,8 +573,7 @@ class obs:
         self._consistent()
         self.create_survey(dt)
         if not self.value.size:
-            warn(
-                "No observations are available to be written to {:s}".format(filename))
+            warn("No observations are available to be written to {:s}".format(filename))
             return None
 
         if not clobber and os.path.exists(filename):
@@ -535,22 +581,36 @@ class obs:
             return None
 
         state_vars = np.maximum(7, np.max(self.type))
-        nc = seapy.roms.ncgen.create_da_obs(filename,
-                                            survey=self.survey_time.size,
-                                            state_variable=state_vars,
-                                            provenance=','.join((':'.join(
-                                                (obs_provenance.get(v, "UNKNOWN"), str(v)))
-                                                for v in np.unique(self.provenance))),
-                                            clobber=True, title=self.title)
+        nc = seapy.roms.ncgen.create_da_obs(
+            filename,
+            survey=self.survey_time.size,
+            state_variable=state_vars,
+            provenance=",".join(
+                (
+                    ":".join((obs_provenance.get(v, "UNKNOWN"), str(v)))
+                    for v in np.unique(self.provenance)
+                )
+            ),
+            clobber=True,
+            title=self.title,
+        )
         nc.variables["spherical"][:] = 1
         nc.variables["Nobs"][:] = self.nobs
         nc.variables["survey_time"][:] = self.survey_time
         nc.variables["obs_variance"][:] = np.ones(state_vars) * 0.1
         nc.variables["obs_time"][:] = self.time[self.sort]
-#        setattr(nc.variables['obs_time'], 'units', 'days since ' + self.reftime[0].strftime("%Y-%m-%d %H:%M:%S") + ' GMT')
-#        setattr(nc.variables['survey_time'], 'units', 'days since ' + self.reftime[0].strftime("%Y-%m-%d %H:%M:%S") + ' GMT')
-        setattr(nc.variables['obs_time'], 'units', 'days since ' + self.reftime.strftime("%Y-%m-%d %H:%M:%S") + ' GMT')
-        setattr(nc.variables['survey_time'], 'units', 'days since ' + self.reftime.strftime("%Y-%m-%d %H:%M:%S") + ' GMT')
+        #        setattr(nc.variables['obs_time'], 'units', 'days since ' + self.reftime[0].strftime("%Y-%m-%d %H:%M:%S") + ' GMT')
+        #        setattr(nc.variables['survey_time'], 'units', 'days since ' + self.reftime[0].strftime("%Y-%m-%d %H:%M:%S") + ' GMT')
+        setattr(
+            nc.variables["obs_time"],
+            "units",
+            "days since " + self.reftime.strftime("%Y-%m-%d %H:%M:%S") + " GMT",
+        )
+        setattr(
+            nc.variables["survey_time"],
+            "units",
+            "days since " + self.reftime.strftime("%Y-%m-%d %H:%M:%S") + " GMT",
+        )
         nc.variables["obs_Xgrid"][:] = self.x[self.sort]
         nc.variables["obs_Ygrid"][:] = self.y[self.sort]
         nc.variables["obs_Zgrid"][:] = self.z[self.sort]
@@ -565,8 +625,9 @@ class obs:
         nc.close()
 
 
-def gridder(grid, time, lon, lat, depth, data, dt, depth_adjust=False,
-            title='ROMS Observations'):
+def gridder(
+    grid, time, lon, lat, depth, data, dt, depth_adjust=False, title="ROMS Observations"
+):
     """
     Construct an observations set from raw observations by placing them
     onto a grid.
@@ -649,9 +710,16 @@ def gridder(grid, time, lon, lat, depth, data, dt, depth_adjust=False,
 
     # First, before relying on gridding, extract only the data that are
     # encompassed by the grid
-    region_list = np.where(np.logical_and.reduce((
-        lat >= np.min(grid.lat_rho), lat <= np.max(grid.lat_rho),
-        lon >= np.min(grid.lon_rho), lon <= np.max(grid.lon_rho))))
+    region_list = np.where(
+        np.logical_and.reduce(
+            (
+                lat >= np.min(grid.lat_rho),
+                lat <= np.max(grid.lat_rho),
+                lon >= np.min(grid.lon_rho),
+                lon <= np.max(grid.lon_rho),
+            )
+        )
+    )
     if not np.any(region_list):
         warn("No observations were located within grid region_list")
         return None
@@ -664,7 +732,7 @@ def gridder(grid, time, lon, lat, depth, data, dt, depth_adjust=False,
         # Get the grid locations from the data locations
         subsurface_values = False
         (j, i) = grid.ij((lon, lat))
-        #depth = grid.n * np.ones(i.size)
+        # depth = grid.n * np.ones(i.size)
         depth = np.zeros(i.size)
         k = np.ma.array(np.resize(grid.n, i.size))
     else:
@@ -707,24 +775,24 @@ def gridder(grid, time, lon, lat, depth, data, dt, depth_adjust=False,
         for v in data:
             valid_data = np.s_[:]
             if isinstance(v.values, np.ma.core.MaskedArray):
-                valid_data = \
-                    (v.values[region_list][valid_list][time_list].nonzero())[0]
+                valid_data = (v.values[region_list][valid_list][time_list].nonzero())[0]
                 if not valid_data.size:
                     continue
 
             # Put together the indices based on the type of data we have
             if subsurface_values:
-                idx = (k[time_list][valid_data],
-                       j[time_list][valid_data],
-                       i[time_list][valid_data])
+                idx = (
+                    k[time_list][valid_data],
+                    j[time_list][valid_data],
+                    i[time_list][valid_data],
+                )
             else:
-                idx = (j[time_list][valid_data],
-                       i[time_list][valid_data])
+                idx = (j[time_list][valid_data], i[time_list][valid_data])
             indices = np.floor(idx).astype(int)
 
             # Grid the data onto our grid and compute the mean and variance
-            ii = aggregate(indices, i[time_list][valid_data], func='mean')
-            jj = aggregate(indices, j[time_list][valid_data], func='mean')
+            ii = aggregate(indices, i[time_list][valid_data], func="mean")
+            jj = aggregate(indices, j[time_list][valid_data], func="mean")
             binned = np.where(ii * jj > 0)
             ii = ii[binned].ravel()
             jj = jj[binned].ravel()
@@ -732,40 +800,41 @@ def gridder(grid, time, lon, lat, depth, data, dt, depth_adjust=False,
             Nd = ii.size
 
             # Put the co-located values together
-            nvalues = aggregate(indices,
-                                v.values[region_list][valid_list][
-                                    time_list][valid_data],
-                                func='mean')
+            nvalues = aggregate(
+                indices,
+                v.values[region_list][valid_list][time_list][valid_data],
+                func="mean",
+            )
 
             # Get their variance
-            vari = aggregate(indices,
-                             v.values[region_list][valid_list][
-                                 time_list][valid_data],
-                             func='var')
+            vari = aggregate(
+                indices,
+                v.values[region_list][valid_list][time_list][valid_data],
+                func="var",
+            )
 
             # Put together the known observation values
             if v.error is not None:
-                errs = aggregate(indices,
-                                 v.error[region_list][valid_list][
-                                     time_list][valid_data]**2,
-                                 func='mean')
+                errs = aggregate(
+                    indices,
+                    v.error[region_list][valid_list][time_list][valid_data] ** 2,
+                    func="mean",
+                )
                 errs = errs[binned].flatten()
             else:
                 errs = 0.0
 
             # Build the depth vectors
             if subsurface_values:
-                dd = aggregate(indices, depth[time_list][valid_data],
-                               func='mean')
-                kk = aggregate(indices, k[time_list][valid_data],
-                               func='mean')
+                dd = aggregate(indices, depth[time_list][valid_data], func="mean")
+                kk = aggregate(indices, k[time_list][valid_data], func="mean")
                 dd = dd[binned].ravel()
                 # ROMS counts from 1 for depth layers
                 kk = kk[binned].ravel() + 1
             else:
                 kk = np.resize(grid.n, Nd)
                 dd = np.zeros(kk.size)
-                #dd = kk
+                # dd = kk
             # Put all of the data from this time into our lists
             ot.append(np.resize(mtime, Nd))
             ox.append(ii)
@@ -776,29 +845,30 @@ def gridder(grid, time, lon, lat, depth, data, dt, depth_adjust=False,
             olat.append(latl)
             oval.append(nvalues[binned].flatten())
             otype.append(np.resize(seapy.roms.obs.astype(v.type), Nd))
-            oprov.append(np.resize(
-                seapy.roms.obs.asprovenance(v.provenance), Nd))
-            oerr.append(np.maximum(v.min_error**2,
-                                   np.maximum(vari[binned].flatten(),
-                                              errs)))
+            oprov.append(np.resize(seapy.roms.obs.asprovenance(v.provenance), Nd))
+            oerr.append(
+                np.maximum(v.min_error**2, np.maximum(vari[binned].flatten(), errs))
+            )
 
     # Make sure that we have something relevant
     if not oval:
         return None
 
     # Put everything together and create an observation class
-    return seapy.roms.obs.obs(time=np.hstack(ot).ravel(),
-                              x=np.hstack(ox).ravel(),
-                              y=np.hstack(oy).ravel(),
-                              z=np.hstack(oz).ravel(),
-                              lat=np.hstack(olat).ravel(),
-                              lon=np.hstack(olon).ravel(),
-                              depth=np.hstack(odep).ravel(),
-                              value=np.hstack(oval).ravel(),
-                              error=np.hstack(oerr).ravel(),
-                              type=np.hstack(otype).ravel(),
-                              provenance=np.hstack(oprov).ravel(),
-                              title=title)
+    return seapy.roms.obs.obs(
+        time=np.hstack(ot).ravel(),
+        x=np.hstack(ox).ravel(),
+        y=np.hstack(oy).ravel(),
+        z=np.hstack(oz).ravel(),
+        lat=np.hstack(olat).ravel(),
+        lon=np.hstack(olon).ravel(),
+        depth=np.hstack(odep).ravel(),
+        value=np.hstack(oval).ravel(),
+        error=np.hstack(oerr).ravel(),
+        type=np.hstack(otype).ravel(),
+        provenance=np.hstack(oprov).ravel(),
+        title=title,
+    )
 
 
 def merge_files(obs_files, out_files, days, dt, reftime, limits=None, clobber=True):
@@ -862,7 +932,7 @@ def merge_files(obs_files, out_files, days, dt, reftime, limits=None, clobber=Tr
     outtime = False
     if isinstance(out_files, str):
         outtime = True
-        time = re.compile('\#')
+        time = re.compile("\#")
 
     # Go through the files to determine which periods they cover
     myobs = list()
@@ -870,10 +940,9 @@ def merge_files(obs_files, out_files, days, dt, reftime, limits=None, clobber=Tr
     edays = list()
     for file in obs_files:
         nc = seapy.netcdf(file)
-        fdays = nc.variables['survey_time'][:]
+        fdays = nc.variables["survey_time"][:]
         nc.close()
-        l = np.where(np.logical_and(fdays >= np.min(days),
-                                    fdays <= np.max(days)))[0]
+        l = np.where(np.logical_and(fdays >= np.min(days), fdays <= np.max(days)))[0]
         if not l.size:
             continue
         myobs.append(file)
@@ -883,8 +952,7 @@ def merge_files(obs_files, out_files, days, dt, reftime, limits=None, clobber=Tr
     edays = np.asarray(edays)
 
     # Loop over the dates in pairs
-    for n, t in track(enumerate(days), total=len(days),
-                      description="search files"):
+    for n, t in track(enumerate(days), total=len(days), description="search files"):
         # Set output file name
         if outtime:
             outfile = time.sub("{:05d}".format(t[0]), out_files)
@@ -909,16 +977,21 @@ def merge_files(obs_files, out_files, days, dt, reftime, limits=None, clobber=Tr
             nobs.add(o[l])
         # Remove any limits
         if limits is not None:
-            l = np.where(np.logical_or.reduce((
-                nobs.x < limits['west'],
-                nobs.x > limits['east'],
-                nobs.y < limits['south'],
-                nobs.y > limits['north'])))
+            l = np.where(
+                np.logical_or.reduce(
+                    (
+                        nobs.x < limits["west"],
+                        nobs.x > limits["east"],
+                        nobs.y < limits["south"],
+                        nobs.y > limits["north"],
+                    )
+                )
+            )
             nobs.delete(l)
         # Make time relative to the assimilation window
         nobs.reftime = reftime
-        #nobs.reftime = seapy.day2date(t[0],epoch=reftime)
-        #nobs.time = abs(abs(nobs.time) - abs(t[0]))
+        # nobs.reftime = seapy.day2date(t[0],epoch=reftime)
+        # nobs.time = abs(abs(nobs.time) - abs(t[0]))
         # Save out the new observations
         nobs.to_netcdf(outfile, dt=dt)
 
