@@ -1859,7 +1859,7 @@ class mangopare(obsgen):
         reftime=seapy.default_epoch,
         temp_limits=None,
         salt_limits=None,
-        temp_error=0.1,
+        temp_error=0.25,
         salt_error=0.1,
     ):
         if temp_limits is None:
