@@ -1849,7 +1849,7 @@ class mangopare(obsgen):
     class to process TEMPERATURE profiles from Mangopare sensors (Moana Project) into ROMS observation
     files. This is a subclass of seapy.roms.genobs.genobs, and handles
     the loading of the data.
-    Temperature error set to sensor accuracy (0.1C) - resolution is 0.01C, and resposne rate 1Hz.
+    Temperature error set to sensor accuracy (0.1C) - resolution is 0.01C, and response rate 1Hz.
     """
 
     def __init__(
@@ -1939,7 +1939,9 @@ class mangopare(obsgen):
         # time = nc.variables["DATETIME"][profile_list]/86400 # convert from seconds to days
         temp = nc.variables["TEMPERATURE"][profile_list]
         temp_qc = nc.variables["TEMPERATURE_QC"][profile_list]
-        depth = nc.variables["DEPTH"][profile_list]
+        depth = np.round(
+            nc.variables["DEPTH"][profile_list]
+        )  # use round to avoid resolution higher than 1m
 
         nc.close()
 
@@ -1949,9 +1951,13 @@ class mangopare(obsgen):
         depth[temp.mask] = np.ma.masked
         # time[temp.mask] = np.ma.masked
 
+        # import ipdb
+        # ipdb.set_trace()
+
         # Search for good data by QC codes
         good_data = np.where(
-            temp_qc.compressed() <= 2
+            (temp_qc.compressed() == 1)
+            & (depth > 10)  # Avoid obs shallower than 10m (min model depth)
         )  # 0"No QC Applied", 1"Good", 2"Probably Good", 3"Probably Bad", 4"Bad", 5"Overwritten"
         # Recomend to also apply ROMS internal QC
 
@@ -1963,9 +1969,6 @@ class mangopare(obsgen):
         lat = np.resize(lat, temp.shape[::-1]).T[~temp.mask][good_data]
         lon = np.resize(lon, temp.shape[::-1]).T[~temp.mask][good_data]
         depth = depth.compressed().T[good_data]
-
-        # import ipdb
-        # ipdb.set_trace()
 
         # Apply the limits
         temp = np.ma.masked_outside(
