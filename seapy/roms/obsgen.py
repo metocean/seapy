@@ -1980,7 +1980,7 @@ class mangopare(obsgen):
         ]
 
         obs = seapy.roms.obs.gridder(
-            self.grid, time, lon, lat, depth, data, self.dt, title
+            self.grid, time, lon, lat, np.round(depth), data, self.dt, title
         )
         obs.reftime = self.reftime
         return obs
