@@ -13,33 +13,42 @@ from collections import namedtuple
 import os
 from warnings import warn
 
-amp_phase = namedtuple('amp_phase', 'amp phase')
-tellipse = namedtuple('tellipse', 'major minor angle phase')
-vuf_vals = namedtuple('vuf_vals', 'v u f')
-__cformat = namedtuple('__cformat', 'freq doodson semi sat shallow')
-__satinfo = namedtuple('__satinfo', 'deldood phcorr amprat ilatfac')
-__shallowinfo = namedtuple('__shallowinfo', 'isshallow iname coef')
+amp_phase = namedtuple("amp_phase", "amp phase")
+tellipse = namedtuple("tellipse", "major minor angle phase")
+vuf_vals = namedtuple("vuf_vals", "v u f")
+__cformat = namedtuple("__cformat", "freq doodson semi sat shallow")
+__satinfo = namedtuple("__satinfo", "deldood phcorr amprat ilatfac")
+__shallowinfo = namedtuple("__shallowinfo", "isshallow iname coef")
 # Load the constituent data when the module is imported
 __reftime = datetime.datetime(1899, 12, 31, 12, 0, 0)
 
-with np.load(os.path.dirname(__file__) + "/constituents.npz", allow_pickle=True) as data:
-    __const_file = data['__const'][()]
+with np.load(
+    os.path.dirname(__file__) + "/constituents.npz", allow_pickle=True
+) as data:
+    __const_file = data["__const"][()]
 
 __const = {}
 for f in list(__const_file.keys()):
-    __shallow = __shallowinfo(__const_file[f]['shallow']['isshallow'],
-                              __const_file[f]['shallow']['iname'], __const_file[f]['shallow']['coef'])
-    __sat = __satinfo(__const_file[f]['sat']['deldood'],
-                      __const_file[f]['sat']['phcorr'],
-                      __const_file[f]['sat']['amprat'],
-                      __const_file[f]['sat']['ilatfac'])
-    __const[f] = __cformat(np.float(__const_file[f]['freq']),
-                           __const_file[f]['doodson'],
-                           np.float(__const_file[f]['semi']),
-                           __sat, __shallow)
+    __shallow = __shallowinfo(
+        __const_file[f]["shallow"]["isshallow"],
+        __const_file[f]["shallow"]["iname"],
+        __const_file[f]["shallow"]["coef"],
+    )
+    __sat = __satinfo(
+        __const_file[f]["sat"]["deldood"],
+        __const_file[f]["sat"]["phcorr"],
+        __const_file[f]["sat"]["amprat"],
+        __const_file[f]["sat"]["ilatfac"],
+    )
+    __const[f] = __cformat(
+        np.float(__const_file[f]["freq"]),
+        __const_file[f]["doodson"],
+        np.float(__const_file[f]["semi"]),
+        __sat,
+        __shallow,
+    )
 
-default_tides = ['M4', 'K2', 'S2', 'M2', 'N2',
-                 'K1', 'P1', 'O1', 'Q1', 'MF', 'MM']
+default_tides = ["M4", "K2", "S2", "M2", "N2", "K1", "P1", "O1", "Q1", "MF", "MM"]
 
 
 def _set_tides(tides=None):
@@ -47,7 +56,11 @@ def _set_tides(tides=None):
     Private method: make sure that tides passed in are a proper array
     and in uppercase
     """
-    return default_tides if tides is None else np.array([t.upper() for t in np.atleast_1d(tides)])
+    return (
+        default_tides
+        if tides is None
+        else np.array([t.upper() for t in np.atleast_1d(tides)])
+    )
 
 
 def frequency(tides=None):
@@ -106,8 +119,12 @@ def __astron(ctime):
     coefs = np.vstack((sc, hc, pc, npc, ppc))
 
     # output variables
-    astro = np.empty(6,)
-    ader = np.empty(6,)
+    astro = np.empty(
+        6,
+    )
+    ader = np.empty(
+        6,
+    )
 
     # Compute astronomical constants at ctime; we only need the fractional
     # part of the cycle.
@@ -118,8 +135,12 @@ def __astron(ctime):
     # Compute lunar time tau, based on fractional part of solar day.
     # Add the hour angle to the longitude of the sun and subtract the
     # longitude of the moon.
-    astro[0] = (ctime - datetime.datetime(ctime.year, ctime.month, ctime.day)) / \
-        datetime.timedelta(1) + astro[2] - astro[1]
+    astro[0] = (
+        (ctime - datetime.datetime(ctime.year, ctime.month, ctime.day))
+        / datetime.timedelta(1)
+        + astro[2]
+        - astro[1]
+    )
 
     # Compute rates of change.
     dargs = np.vstack((0, 1, 2e-4 * D, 3e-4 * D**2))
@@ -175,30 +196,35 @@ def vuf(time, tides=None, lat=55):
     # due to second-order forcing off the equator from about the 5 degree
     # location. Latitudes are hence (somewhat arbitrarily) forced to be
     # no closer than 5 degrees to the equator.
-    if(np.abs(lat) < 5.0):
-        lat = 5 * np.sign(lat + np.finfo('float').eps)
-    slat = np.sin(lat * np.pi / 180.)
+    if np.abs(lat) < 5.0:
+        lat = 5 * np.sign(lat + np.finfo("float").eps)
+    slat = np.sin(lat * np.pi / 180.0)
 
     # Setup output dictionaries
     vufs = {}
 
     for c in tides:
-        shtides = __const[c].shallow.iname if __const[
-            c].shallow.isshallow else [c]
+        shtides = __const[c].shallow.iname if __const[c].shallow.isshallow else [c]
         v, u, f = 0, 0, 1
         for i, s in enumerate(shtides):
-            vtemp = np.fmod(np.dot(__const[s].doodson, astro) +
-                            __const[s].semi, 1) * (2 * np.pi)
+            vtemp = np.fmod(np.dot(__const[s].doodson, astro) + __const[s].semi, 1) * (
+                2 * np.pi
+            )
 
             fsum = 1
             for k in range(len(__const[s].sat.ilatfac)):
-                uu = np.fmod(np.dot(__const[s].sat.deldood[k, :], astro[3:])
-                             + __const[s].sat.phcorr[k], 1)
+                uu = np.fmod(
+                    np.dot(__const[s].sat.deldood[k, :], astro[3:])
+                    + __const[s].sat.phcorr[k],
+                    1,
+                )
                 rr = {
                     0: __const[s].sat.amprat[k],
-                    1: __const[s].sat.amprat[k] * 0.36309 *
-                    (1.0 - 5.0 * slat**2) / slat,
-                    2: __const[s].sat.amprat[k] * 2.59808 * slat
+                    1: __const[s].sat.amprat[k]
+                    * 0.36309
+                    * (1.0 - 5.0 * slat**2)
+                    / slat,
+                    2: __const[s].sat.amprat[k] * 2.59808 * slat,
                 }.get(__const[s].sat.ilatfac[k], 0)
                 fsum += rr * np.exp(1j * 2 * np.pi * uu)
             ftemp = np.absolute(fsum)
@@ -207,7 +233,7 @@ def vuf(time, tides=None, lat=55):
             if __const[c].shallow.isshallow:
                 v += vtemp * __const[c].shallow.coef[i]
                 u += utemp * __const[c].shallow.coef[i]
-                f *= ftemp**np.abs(__const[c].shallow.coef[i])
+                f *= ftemp ** np.abs(__const[c].shallow.coef[i])
             else:
                 v, u, f = vtemp, utemp, ftemp
         vufs[c] = vuf_vals(v, u, f)
@@ -265,7 +291,7 @@ def vel_ellipse(u, v):
         if phase.ndim == 0:
             phase = np.mod(phase, 2 * np.pi) if phase > 0 else phase + 2 * np.pi
             angle = np.mod(angle, 2 * np.pi) if angle > 0 else angle + 2 * np.pi
-        else: # vector or matrix
+        else:  # vector or matrix
             ppos, pneg = phase > 0, phase < 0
             apos, aneg = angle > 0, angle < 0
             phase[ppos] = np.mod(phase[ppos], 2 * np.pi)
@@ -328,8 +354,7 @@ def predict(times, tide, tide_minor=None, lat=55, tide_start=None):
     # If no tide_start is given, then everything is done as per standard.
     if tide_start:
         vufs = dict((ap.upper(), vuf_vals(0, 0, 1)) for ap in clist)
-        hours = np.array(
-            [(t - tide_start).total_seconds() / 3600.0 for t in times])
+        hours = np.array([(t - tide_start).total_seconds() / 3600.0 for t in times])
     else:
         ctime = times[0] + (times[-1] - times[0]) / 2
         vufs = vuf(ctime, clist, lat)
@@ -346,13 +371,31 @@ def predict(times, tide, tide_minor=None, lat=55, tide_start=None):
             m = tide_minor[ap]
 
             ts += np.exp(1j * m.phase) * (
-                c.amp * vufs[ap].f * np.cos(2.0 * np.pi * np.dot(freq[i], hours)
-                                            + (vufs[ap].v + vufs[ap].u) - c.phase)
-                + m.amp * vufs[ap].f * np.sin(2.0 * np.pi * np.dot(freq[i], hours)
-                                            + (vufs[ap].v + vufs[ap].u) - c.phase))
+                c.amp
+                * vufs[ap].f
+                * np.cos(
+                    2.0 * np.pi * np.dot(freq[i], hours)
+                    + (vufs[ap].v + vufs[ap].u)
+                    - c.phase
+                )
+                + m.amp
+                * vufs[ap].f
+                * np.sin(
+                    2.0 * np.pi * np.dot(freq[i], hours)
+                    + (vufs[ap].v + vufs[ap].u)
+                    - c.phase
+                )
+            )
         else:
-            ts += c.amp * vufs[ap].f * np.cos(2.0 * np.pi * np.dot(freq[i], hours)
-                                              + (vufs[ap].v + vufs[ap].u) - c.phase)
+            ts += (
+                c.amp
+                * vufs[ap].f
+                * np.cos(
+                    2.0 * np.pi * np.dot(freq[i], hours)
+                    + (vufs[ap].v + vufs[ap].u)
+                    - c.phase
+                )
+            )
 
     return ts
 
@@ -424,36 +467,49 @@ def fit(times, xin, tides=None, lat=55, tide_start=None, trend=True):
 
     # Generate cosines and sines for all the requested constitutents.
     if trend:
-        A = np.hstack([np.cos(2 * np.pi * np.outer(hours, freq)),
-                       np.sin(2 * np.pi * np.outer(hours, freq)),
-                       np.atleast_2d(hours).T,
-                       np.ones((len(hours), 1))])
+        A = np.hstack(
+            [
+                np.cos(2 * np.pi * np.outer(hours, freq)),
+                np.sin(2 * np.pi * np.outer(hours, freq)),
+                np.atleast_2d(hours).T,
+                np.ones((len(hours), 1)),
+            ]
+        )
     else:
-        A = np.hstack([np.cos(2 * np.pi * np.outer(hours, freq)),
-                       np.sin(2 * np.pi * np.outer(hours, freq)),
-                       np.ones((len(hours), 1))])
+        A = np.hstack(
+            [
+                np.cos(2 * np.pi * np.outer(hours, freq)),
+                np.sin(2 * np.pi * np.outer(hours, freq)),
+                np.ones((len(hours), 1)),
+            ]
+        )
 
     # Calculate coefficients
     ntides = len(tides)
     coef = np.linalg.lstsq(A, xin, rcond=None)[0]
-    xout = np.dot(A[:, :2 * ntides], coef[:2 * ntides])
+    xout = np.dot(A[:, : 2 * ntides], coef[: 2 * ntides])
 
     # Explained variance
-    var_exp = 100 * (np.cov(np.real(xout)) + np.cov(np.imag(xout))) / \
-        (np.cov(np.real(xin)) + np.cov(np.imag(xin)))
+    var_exp = (
+        100
+        * (np.cov(np.real(xout)) + np.cov(np.imag(xout)))
+        / (np.cov(np.real(xin)) + np.cov(np.imag(xin)))
+    )
 
     # Calculate amplitude & phase
-    ap = (coef[:ntides] - 1j * coef[ntides:2 * ntides]) / 2.0
-    am = (coef[:ntides] + 1j * coef[ntides:2 * ntides]) / 2.0
+    ap = (coef[:ntides] - 1j * coef[ntides : 2 * ntides]) / 2.0
+    am = (coef[:ntides] + 1j * coef[ntides : 2 * ntides]) / 2.0
 
     # Nodal Corrections values
     vufs = vuf(ctime, tides, lat)
     if tide_start:
         vufs_ref = vuf(tide_start, tides, lat)
         for v in vufs:
-            vufs[v] = vuf_vals(np.mod(vufs[v].v - vufs_ref[v].v, 2.0 * np.pi),
-                               np.mod(vufs[v].u - vufs_ref[v].u, 2.0 * np.pi),
-                               vufs[v].f / vufs_ref[v].f)
+            vufs[v] = vuf_vals(
+                np.mod(vufs[v].v - vufs_ref[v].v, 2.0 * np.pi),
+                np.mod(vufs[v].u - vufs_ref[v].u, 2.0 * np.pi),
+                vufs[v].f / vufs_ref[v].f,
+            )
 
     # Compute major/minor axis amplitude and phase
     maj_amp = np.zeros((total_tides,))
@@ -463,17 +519,17 @@ def fit(times, xin, tides=None, lat=55, tide_start=None, trend=True):
     for i, c in enumerate(tides):
         maj_amp[i] = (np.abs(ap[i]) + np.abs(am[i])) / vufs[c].f
         min_amp[i] = (np.abs(ap[i]) - np.abs(am[i])) / vufs[c].f
-        min_pha[i] = np.mod(
-            ((np.angle(ap[i]) + np.angle(am[i])) / 2), np.pi)
-        maj_pha[i] = np.mod(vufs[c].v + vufs[c].u - np.angle(ap[i]) + min_pha[i],
-                            2.0 * np.pi)
+        min_pha[i] = np.mod(((np.angle(ap[i]) + np.angle(am[i])) / 2), np.pi)
+        maj_pha[i] = np.mod(
+            vufs[c].v + vufs[c].u - np.angle(ap[i]) + min_pha[i], 2.0 * np.pi
+        )
 
     return {
-        'tide_start': tide_start,
-        'fit': xout,
-        'percent': var_exp,
-        'major': pack_amp_phase(tides + invalid_tides, maj_amp, maj_pha),
-        'minor': pack_amp_phase(tides + invalid_tides, min_amp, min_pha)
+        "tide_start": tide_start,
+        "fit": xout,
+        "percent": var_exp,
+        "major": pack_amp_phase(tides + invalid_tides, maj_amp, maj_pha),
+        "minor": pack_amp_phase(tides + invalid_tides, min_amp, min_pha),
     }
 
 

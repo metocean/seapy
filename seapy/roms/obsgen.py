@@ -172,9 +172,11 @@ def add_ssh_tides(
                     frc["Eamp"][:, oy[cur], ox[cur]],
                     frc["Ephase"][:, oy[cur], ox[cur]],
                 )
+                #######################################
                 zpred = seapy.tide.predict(
                     time, amppha, lat=obs.lat[l][cur], tide_start=tide_start
                 )
+
                 # Add the information to the observations
                 obs.value[l[0][pts]] += zpred
                 obs.error[l[0][pts]] = np.maximum(
@@ -596,10 +598,17 @@ class aviso_sla_track(obsgen):
         lon = lon.ravel()
         dat = dat.ravel()
         err = np.ones(dat.shape) * _aviso_sla_errors.get(self.provenance, 0.1)
+<<<<<<< HEAD
     #    if (
     #        self.ib == True
     #    ):  # add variability of atmospheric correction to the obs error
     #        err = err + errdac
+=======
+        # if (
+        #    self.ib == True
+        # ):  # add variability of atmospheric correction to the obs error
+        #    err = err + errdac
+>>>>>>> Fixing tides to use ops one
 
         if not self.grid.east():
             lon[lon > 180] -= 360
