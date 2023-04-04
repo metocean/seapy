@@ -598,17 +598,10 @@ class aviso_sla_track(obsgen):
         lon = lon.ravel()
         dat = dat.ravel()
         err = np.ones(dat.shape) * _aviso_sla_errors.get(self.provenance, 0.1)
-<<<<<<< HEAD
-    #    if (
-    #        self.ib == True
-    #    ):  # add variability of atmospheric correction to the obs error
-    #        err = err + errdac
-=======
-        # if (
-        #    self.ib == True
-        # ):  # add variability of atmospheric correction to the obs error
-        #    err = err + errdac
->>>>>>> Fixing tides to use ops one
+        #    if (
+        #        self.ib == True
+        #    ):  # add variability of atmospheric correction to the obs error
+        #        err = err + errdac
 
         if not self.grid.east():
             lon[lon > 180] -= 360
