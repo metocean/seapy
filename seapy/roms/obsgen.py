@@ -1944,12 +1944,12 @@ class mangopare(obsgen):
         depth = nc.variables["DEPTH"][profile_list]
         
         # Add subsetting to try and solve blowup problem
-        lon        = lon[0:-1:5]
-        lat        = lat[0:-1:5]
-        depth      = depth[0:-1:5]
-        temp       = temp[0:-1:5]
-        temp_qc    = temp_qc[0:-1:5]
-        julian_day = julian_day[0:-1:5]
+        #lon        = lon[0:-1:5]
+        #lat        = lat[0:-1:5]
+        #depth      = depth[0:-1:5]
+        #temp       = temp[0:-1:5]
+        #temp_qc    = temp_qc[0:-1:5]
+        #julian_day = julian_day[0:-1:5]
         
         nc.close()
 
