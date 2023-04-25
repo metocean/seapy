@@ -1861,7 +1861,7 @@ class mangopare(obsgen):
         reftime=seapy.default_epoch,
         temp_limits=None,
         salt_limits=None,
-        temp_error=0.25,
+        temp_error=0.5,
         salt_error=0.1,
     ):
         if temp_limits is None:
@@ -1941,10 +1941,16 @@ class mangopare(obsgen):
         # time = nc.variables["DATETIME"][profile_list]/86400 # convert from seconds to days
         temp = nc.variables["TEMPERATURE"][profile_list]
         temp_qc = nc.variables["TEMPERATURE_QC"][profile_list]
-        depth = np.round(
-            nc.variables["DEPTH"][profile_list]
-        )  # use round to avoid resolution higher than 1m
-
+        depth = nc.variables["DEPTH"][profile_list]
+        
+        # Add subsetting to try and solve blowup problem
+        lon        = lon[0:-1:5]
+        lat        = lat[0:-1:5]
+        depth      = depth[0:-1:5]
+        temp       = temp[0:-1:5]
+        temp_qc    = temp_qc[0:-1:5]
+        julian_day = julian_day[0:-1:5]
+        
         nc.close()
 
         # Ensure consistency
@@ -1959,7 +1965,7 @@ class mangopare(obsgen):
         # Search for good data by QC codes
         good_data = np.where(
             (temp_qc.compressed() == 1)
-            & (depth > 20)  # Avoid obs shallower than 20m (min model depth)
+            & (depth > 10) & (depth < (np.max(depth)-3*np.std(depth)))
         )  # 0"No QC Applied", 1"Good", 2"Probably Good", 3"Probably Bad", 4"Bad", 5"Overwritten"
         # Recomend to also apply ROMS internal QC
 
