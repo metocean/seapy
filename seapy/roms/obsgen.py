@@ -1965,7 +1965,7 @@ class mangopare(obsgen):
         # Search for good data by QC codes
         good_data = np.where(
             (temp_qc.compressed() == 1)
-            & (depth > 10) & (depth < (np.max(depth)-3*np.std(depth)))
+            & (depth > 10) & (depth < (np.max(depth)-np.std(depth)))
         )  # 0"No QC Applied", 1"Good", 2"Probably Good", 3"Probably Bad", 4"Bad", 5"Overwritten"
         # Recomend to also apply ROMS internal QC
 
