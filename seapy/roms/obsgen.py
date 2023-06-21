@@ -1861,8 +1861,8 @@ class mangopare(obsgen):
         reftime=seapy.default_epoch,
         temp_limits=None,
         salt_limits=None,
-        temp_error=0.5,
-        salt_error=0.1,
+        temp_error=1.0,
+        salt_error=0.5,
     ):
         if temp_limits is None:
             self.temp_limits = (
@@ -1965,7 +1965,7 @@ class mangopare(obsgen):
         # Search for good data by QC codes
         good_data = np.where(
             (temp_qc.compressed() == 1)
-            & (depth > 10) & (depth < (np.max(depth)-np.std(depth)))
+            & (depth > 10) # & (depth < (np.max(depth)-np.std(depth)))
         )  # 0"No QC Applied", 1"Good", 2"Probably Good", 3"Probably Bad", 4"Bad", 5"Overwritten"
         # Recomend to also apply ROMS internal QC
 
@@ -1990,6 +1990,9 @@ class mangopare(obsgen):
         obs = seapy.roms.obs.gridder(
             self.grid, time, lon, lat, np.round(depth), data, self.dt, title
         )
+        last_layer_obs = np.where(obs.z<1.5)
+        if last_layer_obs:
+            obs.delete(last_layer_obs)
         obs.reftime = self.reftime
         return obs
 
