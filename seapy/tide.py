@@ -41,9 +41,9 @@ for f in list(__const_file.keys()):
         __const_file[f]["sat"]["ilatfac"],
     )
     __const[f] = __cformat(
-        np.float(__const_file[f]["freq"]),
+        np.float64(__const_file[f]["freq"]),
         __const_file[f]["doodson"],
-        np.float(__const_file[f]["semi"]),
+        np.float64(__const_file[f]["semi"]),
         __sat,
         __shallow,
     )
