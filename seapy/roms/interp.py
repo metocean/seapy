@@ -432,7 +432,7 @@ def __interp_grids(
                     1,
                     np.minimum(
                         len(records),
-                        np.int(
+                        np.int64(
                             _max_memory
                             / (child_grid.lon_rho.nbytes + src_grid.lon_rho.nbytes)
                         ),
@@ -471,7 +471,7 @@ def __interp_grids(
                     1,
                     np.minimum(
                         len(records),
-                        np.int(
+                        np.int64(
                             _max_memory
                             / (
                                 child_grid.lon_rho.nbytes * child_grid.n
@@ -534,7 +534,7 @@ def __interp_grids(
         dstangle = getattr(child_grid, "angle", None)
         maxrecs = np.minimum(
             len(records),
-            np.int(
+            np.int64(
                 _max_memory
                 / (
                     2
@@ -674,7 +674,7 @@ def field2d(
     maxrecs = np.maximum(
         1,
         np.minimum(
-            records.size, np.int(_max_memory / (dest_lon.nbytes + src_lon.nbytes))
+            records.size, np.int64(_max_memory / (dest_lon.nbytes + src_lon.nbytes))
         ),
     )
     for rn, recs in track(
@@ -778,7 +778,7 @@ def field3d(
         1,
         np.minimum(
             records.size,
-            np.int(
+            np.int64(
                 _max_memory
                 / (
                     dest_lon.nbytes * dest_depth.shape[0]
