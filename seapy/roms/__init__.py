@@ -15,7 +15,7 @@
   - :func:`~seapy.roms.lib.stretching`
   - :func:`~seapy.roms.lib.thickness`
 """
-from . import analysis
+# from . import analysis
 from . import boundary
 from . import clim
 from . import ezgrid
