@@ -48,7 +48,8 @@ from . import seawater
 from . import tide
 from .tidal_energy import tidal_energy
 from .environ import opt
-from .mapping import map, hawaii
+
+# from .mapping import map, hawaii
 from .oa import *
 
 __version__ = "0.7"
