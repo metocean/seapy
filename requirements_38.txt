@@ -1,6 +1,6 @@
-#cartopy==0.20
+cartopy==0.18
 h5py
-joblib
+joblib=0.15.1
 netcdf4
 numpy
 numpy_groupies
