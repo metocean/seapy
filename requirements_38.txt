@@ -1,8 +1,8 @@
-cartopy==0.18
+#cartopy==0.18
 h5py
 joblib==0.15.1
 netcdf4
-numpy
+numpy==1.23.5
 numpy_groupies
 rich
 scipy
