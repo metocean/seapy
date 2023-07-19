@@ -304,6 +304,7 @@ class obsgen(object):
             outtime = True
             time = re.compile("\#")
 
+        self.rundir = os.path.dirname(out_files)
         for n, file in enumerate(in_files):
             try:
                 # Check the times if user requested
