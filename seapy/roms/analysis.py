@@ -277,9 +277,9 @@ def depth_average(field, grid, bottom, top, zeta=None):
     k_ones = np.arange(grid.n, dtype=int)
     top_depth = depths[-1, :, :] if top_depth == 0 else top_depth
     upper = depths - top_depth
-    upper[np.where(upper < 0)] = np.float('inf')
+    upper[np.where(upper < 0)] = float('inf')
     lower = depths - depth
-    lower[np.where(lower > 0)] = -np.float('inf')
+    lower[np.where(lower > 0)] = -float('inf')
     thickness *= np.ma.masked_equal(np.logical_and(
         k_ones[:, np.newaxis, np.newaxis] <= np.argmin(upper, axis=0),
         k_ones[:, np.newaxis, np.newaxis] >=
